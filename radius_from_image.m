@@ -1,4 +1,4 @@
-function [r,dx,other_data] = radius_from_image(filepath,varargin)
+function [r,dx,params,gel_fig] = radius_from_image(filepath,varargin)
 while numel(varargin) >= 2
     var = varargin{1};
     val = varargin{2};
@@ -43,8 +43,8 @@ if numel(size(image)) ~= 2
     I = rgb2gray(I);
 end
 I = I*scale_factor;
-gel_fig = figure;
 imshow(I)
+gel_fig = gcf;
 set(gcf,'Position',[813   332   868   615])
 hold on
 
@@ -213,10 +213,11 @@ out_struct.pinhole_edge = pinhole_edge;
 out_struct.gel_center = gel_center;
 out_struct.pinhole_center = pinhole_center;
 out_struct.dx_definition = dx_def;
+out_struct.radius_definition = rad_def;
 if exist('pinhole_to_edge_fit','var')
     out_struct.dx_fit = pinhole_to_edge_fit;
 end
-other_data = out_struct;
+params = out_struct;
 
 dx = displacement_pixels;
 r = radius_pixels;

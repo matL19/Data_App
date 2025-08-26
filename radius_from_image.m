@@ -43,8 +43,8 @@ if numel(size(image)) ~= 2
     I = rgb2gray(I);
 end
 I = I*scale_factor;
-% gel_fig = figure;
 imshow(I)
+gel_fig = gcf;
 set(gcf,'Position',[813   332   868   615])
 hold on
 
@@ -189,16 +189,12 @@ elseif dx_def == "from edge"
     end
     pinhole_to_edge_fit = out;
     
-    displacement_pixels = min(yfit);
+    [displacement_pixels, min_idx] = min(yfit);
     
-    min_idx = displacement_pixels == yfit;
     edge_part = gel_edge(min_idx,:);
-%     delta_x = edge_part(1) - pinhole_center(1);
-%     delta_y = edge_part(2) - pinhole_center(2);
-%     angle = atan(delta_y/delta_x);
-%     
     
-    figure(gel_fig);
+    figure(gel_fig.Number);
+    hold on
     plot([edge_part(1) pinhole_center(1)],[edge_part(2) pinhole_center(2)],'LineWidth',2','Color','cyan')
     b = annotation('textbox',[0.1 0.75 0.1 0.1],'String',"dx = " + displacement_pixels + " pixels");
     b.FontSize = 16;

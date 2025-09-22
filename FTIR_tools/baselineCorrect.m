@@ -1,4 +1,13 @@
 function baseline_corrected_data = baselineCorrect(varargin)
+% baseline corrects the data
+% if 1 input, baselineCorrect(data)
+%       corrects to the minimum point in the data
+% if 2 inputs, baselineCorrect(x,data)
+%       corrects to the minimum point in the data
+% if >= 3 inputs, baselineCorrect(x,data,"name",value)
+%       name/value pairs:
+%          "value" - baseline corrects to the specific value of the x-axis
+
 if nargin <= 0
     error("Function baselineCorrect requires at least 1 input.")
 elseif nargin == 1
@@ -25,6 +34,7 @@ else
             otherwise
                 error("Invalid name/value pairs!")
         end
+        varargin = varargin(3:end);
     end
 end
 
@@ -37,7 +47,7 @@ elseif method == "point val" && exist('x','var')
     if numel(y0) ~= 1
         error("Correction point value yielded more than 1 index.")
     end
-    baseline_corrected_data = data - y0;
+    baseline_corrected_data = y - y0;
 elseif method == "point val" && ~exist('x','var')
     error("An x-axis is needed to do a point-correction.")
 end

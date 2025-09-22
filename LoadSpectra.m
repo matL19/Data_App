@@ -12,6 +12,9 @@ function [Spectra, Wavenumbers, SpectraTitles, Filenames, ...
 if nargin == 0
 [Filenames,pathname]=uigetfile({'*.spa','Thermo Spectrum (*.spa)'}, ...
        'MultiSelect','on','Select Spectra Files...');
+elseif nargin == 2
+    pathname = varargin{1};
+    Filenames = varargin{2};
 elseif nargin == 3
     pathname = varargin{1};
     fileroot = varargin{2};

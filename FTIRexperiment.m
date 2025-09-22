@@ -16,6 +16,9 @@ classdef FTIRexperiment
         fitMethod
         diffusionFitResult struct
         displacement double = NaN
+        temperature_setpoint double = NaN
+        temperature double = NaN
+        temperature_std double = NaN
     end
     methods
         % CONSTRUCTOR METHOD !!!

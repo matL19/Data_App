@@ -1,4 +1,23 @@
-function [r,dx,other_data] = radius_from_image(filepath,varargin)
+function [r,dx,other_data] = radius_from_image(filepath,path_to_ref,ref_filename,varargin)
+% determines the radius and pinhole displacement from an image
+% name-value pairs include:
+%   
+%   "image scale" - any number
+%   
+%   "dx definition" - "from center" (default) or "from edge"
+%   
+%   "radius definition" - "centroid" (default) or "radius of curvature" or
+%   "circle fit"
+%   
+%   "units" - "mm" or "um"
+
+
+% set default values
+scale_factor = 1;
+dx_def = "from center";
+rad_def = "centroid";
+units = "mm";
+% read name-value pairs
 while numel(varargin) >= 2
     var = varargin{1};
     val = varargin{2};
@@ -12,24 +31,21 @@ while numel(varargin) >= 2
                 error("Only value arguments ""from center"" and ""from edge"" can pair with ""dx definition""");
             end
         case "radius definition"
-            if val == "centroid" || val == "radius of curvature"
+            if val == "centroid" || val == "radius of curvature" || val == "circle fit"
                 rad_def = val;
             else
                 error("Only value arguments ""centroid"" and ""radius of curvature"" can pair with ""radius definition""");
+            end
+        case "units"
+            if val == "um" || val == "mm"
+                units = val;
+            else
+                erro("Only um and mm units supported.")
             end
         otherwise
             error(var + " is an invalid name/value pair keyword.")
     end
     varargin = varargin(3:end);
-end
-if ~exist('scale_factor','var')
-    scale_factor = 1;
-end
-if ~exist('dx_def','var')
-    dx_def = "from center";
-end
-if ~exist('rad_def','var')
-    rad_def = "centroid";
 end
 
 slashes = strfind(filepath,"/");
@@ -75,8 +91,8 @@ scatter(pinhole_edge(:,1),pinhole_edge(:,2),'filled','MarkerFaceColor','cyan')
 pinhole_center = [mean(pinhole_edge(:,1)) mean(pinhole_edge(:,2))];
 scatter(pinhole_center(1),pinhole_center(2),100,'filled','MarkerFaceColor','red')
 delete(findall(gcf,'type','annotation'))
-%
-% Calculate values
+
+% Calculate sample radius
 
 if rad_def == "radius of curvature"
     % calculate the radius of curvature
@@ -128,6 +144,11 @@ elseif rad_def == "centroid"
     radius = mean(distances);
     y0 = yC;
     x0 = xC - radius;
+elseif rad_def == "circle fit"
+    [xC, yC, radius] = circfit(gel_edge(:,1),gel_edge(:,2));
+    x0 = xC - radius;
+    y0 = yC;
+    plot(radius*cos(0:0.01:2*pi)+xC,radius*sin(0:0.01:2*pi)+yC,'Color','red')
 end
 scatter(xC,yC,'filled','red')
 plot([x0 xC],[y0 yC],'green','LineWidth',2)
@@ -140,7 +161,8 @@ a.FontSize = 16;
 a.Color = 'green';
 a.EdgeColor = 'white';
 
-% find pinhole displcement
+% Calculate pinhole displacement
+
 if dx_def == "from center"
     delta_x = pinhole_center(1) - gel_center(1);
     delta_y = pinhole_center(2) - gel_center(2);
@@ -202,19 +224,31 @@ elseif dx_def == "from edge"
     b.EdgeColor = 'white';
 end
 
-% other data output structure
+% Convert pixels to length
+length_per_pixel = get_distance_per_pixel(path_to_ref,ref_filename,[1476 1939;824 828],2000,"um","image scale",10);
+if units == "um"
+    dx = displacement_pixels * length_per_pixel;
+    r = radius_pixels * length_per_pixel;
+elseif units == "mm"
+    dx = displacement_pixels * length_per_pixel / 1000;
+    r = radius_pixels * length_per_pixel / 1000;
+end
+
+a.String = a.String + " " + r + " " + units;
+b.String = b.String + " " + dx + " " + units;
+
+% Other parameters output
+
 clear out_struct
 out_struct.gel_edge = gel_edge;
 out_struct.pinhole_edge = pinhole_edge;
 out_struct.gel_center = gel_center;
 out_struct.pinhole_center = pinhole_center;
 out_struct.dx_definition = dx_def;
+out_struct.length_per_pixel = length_per_pixel;
 if exist('pinhole_to_edge_fit','var')
     out_struct.dx_fit = pinhole_to_edge_fit;
 end
 other_data = out_struct;
-
-dx = displacement_pixels;
-r = radius_pixels;
 
 end

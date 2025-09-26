@@ -10,7 +10,7 @@
 % previous analysis.
 
 % ----
-date_of_experiment = "2025-09-18";
+date_of_experiment = "2025-08-27";
 % ----
 
 year_of_experiment = year(datetime(date_of_experiment));
@@ -31,18 +31,18 @@ end
 %% Load the image from Isilon
 
 % ---- path to the image within CHEM-SGR (end with a slash) ----
-pre_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-09-18/";
+pre_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-08-27/";
 % ----
 
 % ---- name of the pre-diffusion image file (use the .tif one) ----
-pre_image_filename = "PMNTF2 EMIM FTIR windows 20250918 65 C pre-diffusion.tif";
+pre_image_filename = "PMIM NTF2 2D windows 20250827 rt pre-diffusion.tif";
 % ----
 
 %% Process the image
 
 % Get the radius from the image
 % ------------
-dx_def = "from center";
+dx_def = "from edge";
 rad_def = "circle fit";
 units = "mm";
 path_to_ref = isilon_path + "sgr-kiralux-camera.chem.pitt.edu/2025-05-09/";
@@ -52,9 +52,33 @@ ref_filename = "scaled_reticle01.tif";
 [pre_radius,pre_displacement,pre_other] = radius_from_image(isilon_path+pre_image_path+pre_image_filename,...
     path_to_ref,ref_filename,...
     "image scale",80,"dx definition",dx_def,"radius definition",rad_def,...
-    "units",units);
+    "units",units,"flag_plot",false);
 
 fprintf("r = %4f mm; dx = %4f mm\n",pre_radius,pre_displacement)
+
+% make a neat structure
+image_processing.pre.path = pre_image_path + pre_image_filename;
+image_processing.pre.radius = pre_radius;
+image_processing.pre.displacement = pre_displacement;
+image_processing.pre.units = units;
+image_processing.pre.dx_definition = dx_def;
+image_processing.pre.radius_definition = rad_def;
+image_processing.pre.other_data = pre_other;
+
+%% Save the data - just pre image
+
+cd(data_path)
+save(date_of_experiment + "_image_processing_data.mat",'image_processing')
+
+%% Show the resulting image analysis
+
+if ~exist('image_processing','var')
+    cd(data_path)
+    load(date_of_experiment + "_image_processing_data.mat")
+end
+I = imread(isilon_path + image_processing.pre.path);
+figure(1);clf
+plotGelImageAnalysis(I*100,image_processing.pre.radius,image_processing.pre.displacement,image_processing.pre.other_data,image_processing.pre.units)
 
 %% Process the post image
 
@@ -65,11 +89,11 @@ post_image_complete = true;
 if post_image_complete
     
     % ---- path to the image within CHEM-SGR (end with a slash) ----
-    post_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-09-19/";
+    post_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-09-02/";
     % ----
     
     % ---- name of the pre-diffusion image file (use the .tif one) ----
-    post_image_filename = "PMNTF2 EMIM FTIR windows 20250918 65 C post-diffusion.tif";
+    post_image_filename = "PMIM NTF2 2D windows 20250827 rt post-diffusion.tif";
     % ----
     
     % Get the radius from the image
@@ -77,33 +101,9 @@ if post_image_complete
     [post_radius,post_displacement,post_other] = radius_from_image(isilon_path+post_image_path+post_image_filename,...
         path_to_ref,ref_filename,...
         "image scale",40,"dx definition",dx_def,"radius definition",rad_def,...
-        "units",units);
+        "units",units,"flag_plot",false);
     % ------------
 
-    
-end
-
-%% Show the difference in pre and post image
-if post_image_complete
-    % Show the image comparison
-    pre_image = imread(isilon_path + pre_image_path + pre_image_filename);
-    post_image = imread(isilon_path + post_image_path + post_image_filename);
-    [optimizer, metric] = imregconfig('multimodal');
-    post_image_moved = imregister(post_image,pre_image,'similarity',optimizer,metric);
-    figure(5015);
-    imshowpair(pre_image,post_image_moved)
-end
-%% Save the data
-% make a neat structure
-image_processing.pre.path = pre_image_path + pre_image_filename;
-image_processing.pre.radius = pre_radius;
-image_processing.pre.displacement = pre_displacement;
-image_processing.pre.units = units;
-image_processing.pre.dx_definition = dx_def;
-image_processing.pre.radius_definition = rad_def;
-image_processing.pre.other_data = pre_other;
-
-if post_image_complete
     image_processing.post.path = post_image_path + post_image_filename;
     image_processing.post.radius = post_radius;
     image_processing.post.displacement = post_displacement;
@@ -111,10 +111,45 @@ if post_image_complete
     image_processing.post.dx_definition = dx_def;
     image_processing.post.radius_definition = rad_def;
     image_processing.post.other_data = post_other;
+    
 end
 
-cd(data_path)
-save(date_of_experiment + "_image_processing_data.mat",'image_processing')
+%% Save the data again - with post image
+
+if post_image_complete
+    
+    cd(data_path)
+    save(date_of_experiment + "_image_processing_data.mat",'image_processing')
+    
+end
+
+%% Show the post image analysis
+
+if post_image_complete
+    
+    if ~exist('image_processing','var')
+        cd(data_path)
+        load(date_of_experiment + "_image_processing_data.mat")
+    end
+    I = imread(isilon_path + image_processing.post.path);
+    figure(2);clf
+    plotGelImageAnalysis(I*100,image_processing.post.radius,image_processing.post.displacement,image_processing.post.other_data,image_processing.post.units)
+    
+end
+
+%% Show the difference in pre and post image
+
+if post_image_complete
+    
+    % Show the image comparison
+    pre_image = imread(isilon_path + pre_image_path + pre_image_filename);
+    post_image = imread(isilon_path + post_image_path + post_image_filename);
+    [optimizer, metric] = imregconfig('multimodal');
+    post_image_moved = imregister(post_image,pre_image,'similarity',optimizer,metric);
+    figure(5015);
+    imshowpair(pre_image,post_image_moved)
+    
+end
 %% ---- END OF STEP 1 ----
 
 %% Step 2: Fit the FTIR peaks to obtain the uptake curve
@@ -122,34 +157,41 @@ save(date_of_experiment + "_image_processing_data.mat",'image_processing')
 %% Load in the spectra
 cd ~
 % --- the indicies of the spectra you wish to use ----
-spectra_range = [1:316];
+spectra_range = [1:404];
 % ----
 
 % data to use
 % -------
-use_spectra = [1:316];
+use_spectra = [1:368 397:spectra_range(end)];
 % -------
 % some of the data can be bad. only these spectra will be used for all data
 % analysis and visualization.
 
 % --- the spectra file prefix ---
-file_prefix = 'PMNTF2EMIM_FTIR_20250918_65C_';
+file_prefix = 'PMIMNTF2_2D_20250827_rt_';
 % ----
 
 % --- the name of the temperature file
-temperature_log_filename = "TemperatureLog[12_30_29_PM][9_18_2025].log";
+temperature_log_filename = "TemperatureLog[5_30_07_PM][8_27_2025].log";
 % ---
 
 % --- experimental parameters ---
 volume = NaN;  % in microliters
-path_length = 67.5083;  % in microns
-gel_radius = pre_radius*1000;  % in microns
-displacement = pre_displacement*1000; % in microns
-time_delay = 300;  % between spectra, in seconds
+path_length = 10.7889;  % in microns
+time_delay = 120;  % between spectra, in seconds
 sample_name = "PMIM NTF2";
 your_name = "Matt";
-temperature_setpoint = 65;
+temperature_setpoint = NaN;
 % ---
+
+% set the displacement and radius
+if post_image_complete
+    gel_radius = mean([pre_radius post_radius])*1000;  % in microns
+    displacement = mean([pre_displacement post_displacement])*1000; % in microns
+else
+    gel_radius = pre_radius * 1000;
+    displacement = post_displacement * 1000;
+end
 
 cd(data_path)
 [data1,freq] = LoadSpectra(data_path,file_prefix,spectra_range);
@@ -170,7 +212,12 @@ f.displacement = displacement;
 f.temperature_setpoint = temperature_setpoint;
 
 % Determine the temperature from the log file
-temp_log = readmatrix(temperature_log_filename);
+try
+    temp_log = readmatrix(temperature_log_filename);
+catch
+    warning("No temperature log found. A temperature was not recorded.")
+    temp_log = [];
+end
 if ~isempty(temp_log)
     temp_log = temp_log(:,2);
     temp_log = temp_log(~isnan(temp_log));
@@ -185,7 +232,7 @@ fprintf("Successfully imported " + size(f.data,2) + " spectra.\n")
 
 %% Guesses for FTIR peak fitting, by eye
 % ---- Which spectrum will you match to? Usually the last one is good.
-trial_spectrum = 316;
+trial_spectrum = 404;
 % ----
 
 % set the fit range. Usually doesn't need to be changed
@@ -193,13 +240,13 @@ range1 = [2290 2390];
 
 clear sp
 % ---- User-input starting point values ----
-sp.center = 2340;
+sp.center = 2342;
 sp.wg = 1.7;
 sp.wl = 1.7;
-sp.a1 = 3.87;  % main peak height
+sp.a1 = 1.2;  % main peak height
 sp.a2 = 0.07; % expected Boltzmann factor for bend
 sp.a3 = 0; % gas lines
-sp.c0 = 0.008;
+sp.c0 = 0.013;
 sp.c1 = 0; % baseline slope
 % ----
 
@@ -392,7 +439,7 @@ dy = 0;
 % ---- User input starting values
 dx = f.displacement;  % from the image analysis. can be overridden
 %     D      C
-sp = [22.48  0.07225]; % put guess here
+sp = [5      0.17]; % put guess here
 ub = [1e5 10];
 lb = [0 0];
 % ----
@@ -400,7 +447,7 @@ lb = [0 0];
 figure(728);clf
 plot(t,y)
 hold on
-ymodel = diffusion_moving_beam(t,sp(1),A,sp(2),nmax,sigma,dx,dy,"rlim",rlim,'dx definition','from center');
+ymodel = diffusion_moving_beam(t,sp(1),A,sp(2),nmax,sigma,dx,dy,"rlim",rlim,'dx definition',dx_def);
 plot(t,ymodel)
 res = y(:) - ymodel(:);
 plot(t,res-0.025,'ro')
@@ -417,7 +464,7 @@ opts = fitoptions('Method','NonlinearLeastSquares',...
     'TolFun',1e-16,...
     'TolX',1e-16);
 
-ft = fittype(@(D,C,t) diffusion_moving_beam(t,D,A,C,nmax,sigma,dx,dy,"rlim",rlim,'dx definition','from center'),...
+ft = fittype(@(D,C,t) diffusion_moving_beam(t,D,A,C,nmax,sigma,dx,dy,"rlim",rlim,'dx definition',dx_def),...
     'independent',{'t'},...
     'dependent','absorbance',...
     'coefficients',{'D','C'},...
@@ -473,6 +520,7 @@ others = ["95% Confidence Interval is "+ci(1)+" to "+ci(2)+".";...
     "R^2 = "+string(f.diffusionFitResult.G.rsquare)]
 
 f.diffusionFitResult.fobj
+
 %% Save the data
 
 single_diffusion_fitting_params.sp = sp;
@@ -494,12 +542,22 @@ save(f.dateString + "_single_diffusion_fitting","f")
 % ---- PUT IN THE CORRECT NOTEBOOK PAGE TITLE ---
 notebook = 'Matt Lab Notebook';
 folder = 'Experiments';
-page_title = '2025-09-18 Diffusion of CO2 in PMNTF2 EMIM at 65 C';
+page_title = '2025-08-27 Diffusion of CO2 in PMIM NTF2';
 % ----
 
 obj = labarchivesCallObj('notebook',notebook,...
     'folder',folder,...
     'page',page_title);
+
+% parameters text entry
+obj.addEntry('plain text entry',...
+    sprintf(['Data post-processing parameters for easy access:\n\n'...
+            '* Radius used: %.3f μm\n\n'...
+            '* Displacement used: %.3f μm\n\n'...
+            '* Displacement defined: %s\n\n'...
+            '* Measured temperature: %.2f ± %.2f ºC'],...
+            f.radius, f.displacement, image_processing.pre.dx_definition,...
+            f.temperature, f.temperature_std));
 
 % pre photo
 % ----------
@@ -512,6 +570,7 @@ obj = obj.updateFigureAttachment('caption',caption);
 if post_image_complete
 caption = "Kiralux camera photo of the sample before the diffusion annotated with calculated values: ";
 caption = caption + "radius = " + post_radius + "mm, " + "dx = " + post_displacement + "mm.";
+
 % post photo
 % ----------
 figure(2)

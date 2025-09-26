@@ -1,8 +1,17 @@
 function out = diffusion_moving_beam(t,D,A,C,nmax,sigma,dx,dy,varargin)
 % out = diffusion_moving_beam(t,D,A,C,nmax,sigma,dx,dy,varargin)
-% DIFFUSION FITTING FUNCTION. varargin currently only has two options: rlim and t0.
-% Enter as name/value pairs.
-% The default values reflect the case where rlim >> sigma (Inf) and t0 = 0.
+% DIFFUSION FITTING FUNCTION.
+% 
+% name/value pairs:
+%
+%   "rlim" - limit of integration for radius limit from beam center
+%   (dx,dy). Default = Inf
+%
+%   "t0" - horizontal offset. Default = 0
+%
+%   "dx definition" - dx defined as distance "from center" or "from edge".
+%   Default = "from center"
+%
 
 j0 = besselzero(0,nmax,1); % get nmax zeros of 0th order bessel function of first kind
 

@@ -1,15 +1,18 @@
-%% FULL DATA ANALYSIS of diffusion experiment - from start to finish - 
+%% FULL DATA ANALYSIS of diffusion experiment - from start to finish -
 
 % ---- Variables that require user manual input will be surrounded ----
-    % like this
+% like this
 % ----
 
 %%
 % ---- IMPORTANT!!! Input the correct data right from the start. This will put
 % all the data in the right place. If the date is wrong, it could overwrite
 % previous analysis.
-date_of_experiment = "2025-05-12";
+
 % ----
+date_of_experiment = "2025-08-27";
+% ----
+
 year_of_experiment = year(datetime(date_of_experiment));
 
 % ---- here put your path to CHEM-SGR (end with a slash). This will be necessary
@@ -28,45 +31,125 @@ end
 %% Load the image from Isilon
 
 % ---- path to the image within CHEM-SGR (end with a slash) ----
-image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-05-12/";
+pre_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-08-27/";
 % ----
 
-% ---- name of the image file (use the .tif one) ----
-image_filename = "75EMIMNTF2inPEGDA_20250512_pre-diffusion_roomtemp.tif";
+% ---- name of the pre-diffusion image file (use the .tif one) ----
+pre_image_filename = "PMIM NTF2 2D windows 20250827 rt pre-diffusion.tif";
 % ----
+
 %% Process the image
 
 % Get the radius from the image
 % ------------
-[radius_pixels,displacement_pixels,other] = radius_from_image(isilon_path+image_path+image_filename,"image scale",25,"dx definition","from center","radius definition","centroid");
-% ------------
-
-% Convert the radius to distance
-% ------------
-
-% ------------
-%% Get the scaling
-
-units = "um";
+dx_def = "from edge";
+rad_def = "circle fit";
+units = "mm";
 path_to_ref = isilon_path + "sgr-kiralux-camera.chem.pitt.edu/2025-05-09/";
-um_per_pixel = get_distance_per_pixel(path_to_ref,"scaled_reticle01.tif",[1476 1939;824 828],2000,units,"image scale",10);
+ref_filename = "scaled_reticle01.tif";
+% ------------
 
-%% Calculate the radius
-radius_mm = radius_pixels*um_per_pixel/1000;
-displacement_mm = displacement_pixels*um_per_pixel/1000;
-fprintf("r = %4f mm; dx = %4f mm\n",radius_mm,displacement_mm)
-%% Save the data
+[pre_radius,pre_displacement,pre_other] = radius_from_image(isilon_path+pre_image_path+pre_image_filename,...
+    path_to_ref,ref_filename,...
+    "image scale",80,"dx definition",dx_def,"radius definition",rad_def,...
+    "units",units,"flag_plot",false);
+
+fprintf("r = %4f mm; dx = %4f mm\n",pre_radius,pre_displacement)
+
 % make a neat structure
-image_processing.path = image_path + image_filename;
-image_processing.radius_mm = radius_mm;
-image_processing.displacement_mm = displacement_mm;
-image_processing.length_per_pixel = um_per_pixel;
-image_processing.units = units;
-image_processing.radius_definition = "centroid";
-image_processing.other_data = other;
+image_processing.pre.path = pre_image_path + pre_image_filename;
+image_processing.pre.radius = pre_radius;
+image_processing.pre.displacement = pre_displacement;
+image_processing.pre.units = units;
+image_processing.pre.dx_definition = dx_def;
+image_processing.pre.radius_definition = rad_def;
+image_processing.pre.other_data = pre_other;
+
+%% Save the data - just pre image
 
 cd(data_path)
 save(date_of_experiment + "_image_processing_data.mat",'image_processing')
+
+%% Show the resulting image analysis
+
+if ~exist('image_processing','var')
+    cd(data_path)
+    load(date_of_experiment + "_image_processing_data.mat")
+end
+I = imread(isilon_path + image_processing.pre.path);
+figure(1);clf
+plotGelImageAnalysis(I*100,image_processing.pre.radius,image_processing.pre.displacement,image_processing.pre.other_data,image_processing.pre.units)
+
+%% Process the post image
+
+% ---- is the run complete and you have a post image?
+post_image_complete = true;
+% ----
+
+if post_image_complete
+    
+    % ---- path to the image within CHEM-SGR (end with a slash) ----
+    post_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-09-02/";
+    % ----
+    
+    % ---- name of the pre-diffusion image file (use the .tif one) ----
+    post_image_filename = "PMIM NTF2 2D windows 20250827 rt post-diffusion.tif";
+    % ----
+    
+    % Get the radius from the image
+    % ------------
+    [post_radius,post_displacement,post_other] = radius_from_image(isilon_path+post_image_path+post_image_filename,...
+        path_to_ref,ref_filename,...
+        "image scale",40,"dx definition",dx_def,"radius definition",rad_def,...
+        "units",units,"flag_plot",false);
+    % ------------
+
+    image_processing.post.path = post_image_path + post_image_filename;
+    image_processing.post.radius = post_radius;
+    image_processing.post.displacement = post_displacement;
+    image_processing.post.units = units;
+    image_processing.post.dx_definition = dx_def;
+    image_processing.post.radius_definition = rad_def;
+    image_processing.post.other_data = post_other;
+    
+end
+
+%% Save the data again - with post image
+
+if post_image_complete
+    
+    cd(data_path)
+    save(date_of_experiment + "_image_processing_data.mat",'image_processing')
+    
+end
+
+%% Show the post image analysis
+
+if post_image_complete
+    
+    if ~exist('image_processing','var')
+        cd(data_path)
+        load(date_of_experiment + "_image_processing_data.mat")
+    end
+    I = imread(isilon_path + image_processing.post.path);
+    figure(2);clf
+    plotGelImageAnalysis(I*100,image_processing.post.radius,image_processing.post.displacement,image_processing.post.other_data,image_processing.post.units)
+    
+end
+
+%% Show the difference in pre and post image
+
+if post_image_complete
+    
+    % Show the image comparison
+    pre_image = imread(isilon_path + pre_image_path + pre_image_filename);
+    post_image = imread(isilon_path + post_image_path + post_image_filename);
+    [optimizer, metric] = imregconfig('multimodal');
+    post_image_moved = imregister(post_image,pre_image,'similarity',optimizer,metric);
+    figure(5015);
+    imshowpair(pre_image,post_image_moved)
+    
+end
 %% ---- END OF STEP 1 ----
 
 %% Step 2: Fit the FTIR peaks to obtain the uptake curve
@@ -74,21 +157,41 @@ save(date_of_experiment + "_image_processing_data.mat",'image_processing')
 %% Load in the spectra
 cd ~
 % --- the indicies of the spectra you wish to use ----
-spectra_range = [1:115]; 
+spectra_range = [1:404];
 % ----
+
+% data to use
+% -------
+use_spectra = [1:368 397:spectra_range(end)];
+% -------
+% some of the data can be bad. only these spectra will be used for all data
+% analysis and visualization.
 
 % --- the spectra file prefix ---
-file_prefix = '75EMIMNTF2inPEGDA_20250512_room_';
+file_prefix = 'PMIMNTF2_2D_20250827_rt_';
 % ----
 
-% --- experimental parameters ---
-volume = 0.07;  % in microliters
-spacer_size = 12;  % in microns
-gel_radius = radius_mm*1000;  % as previously calculated, but can be overridden
-time_delay = 60;  % between spectra, in seconds
-sample_name = "75% EMIM NTF2 in PEGDA";
-your_name = "Matt";
+% --- the name of the temperature file
+temperature_log_filename = "TemperatureLog[5_30_07_PM][8_27_2025].log";
 % ---
+
+% --- experimental parameters ---
+volume = NaN;  % in microliters
+path_length = 10.7889;  % in microns
+time_delay = 120;  % between spectra, in seconds
+sample_name = "PMIM NTF2";
+your_name = "Matt";
+temperature_setpoint = NaN;
+% ---
+
+% set the displacement and radius
+if post_image_complete
+    gel_radius = mean([pre_radius post_radius])*1000;  % in microns
+    displacement = mean([pre_displacement post_displacement])*1000; % in microns
+else
+    gel_radius = pre_radius * 1000;
+    displacement = post_displacement * 1000;
+end
 
 cd(data_path)
 [data1,freq] = LoadSpectra(data_path,file_prefix,spectra_range);
@@ -102,27 +205,48 @@ end
 sub_data = data1 - data1(:,1);
 
 % INITIALIZE OBJECT
-f = FTIRexperiment(sub_data,freq,volume,spacer_size,gel_radius,...
+f = FTIRexperiment(sub_data,freq,volume,path_length,gel_radius,...
     time_delay,sample_name,date_of_experiment,your_name);
 f = f.timeAxis(data_path,file_prefix,spectra_range);
+f.displacement = displacement;
+f.temperature_setpoint = temperature_setpoint;
+
+% Determine the temperature from the log file
+try
+    temp_log = readmatrix(temperature_log_filename);
+catch
+    warning("No temperature log found. A temperature was not recorded.")
+    temp_log = [];
+end
+if ~isempty(temp_log)
+    temp_log = temp_log(:,2);
+    temp_log = temp_log(~isnan(temp_log));
+    f.temperature = mean(temp_log);
+    f.temperature_std = std(temp_log);
+    fprintf("Temperature recorded: %.3f ± %.3f ºC\n",f.temperature,f.temperature_std)
+else
+    fprintf("Cannot read temperature log file until experiment is complete.\n")
+end
 
 fprintf("Successfully imported " + size(f.data,2) + " spectra.\n")
+
 %% Guesses for FTIR peak fitting, by eye
 % ---- Which spectrum will you match to? Usually the last one is good.
-trial_spectrum = 110;
+trial_spectrum = 404;
 % ----
 
 % set the fit range. Usually doesn't need to be changed
 range1 = [2290 2390];
 
+clear sp
 % ---- User-input starting point values ----
-sp.center = 2341.25;
-sp.wg = 1.7; 
+sp.center = 2342;
+sp.wg = 1.7;
 sp.wl = 1.7;
-sp.a1 = 2.25;  % main peak height
+sp.a1 = 1.2;  % main peak height
 sp.a2 = 0.07; % expected Boltzmann factor for bend
-sp.a3 = 0.0; % gas lines
-sp.c0 = 0.02;
+sp.a3 = 0; % gas lines
+sp.c0 = 0.013;
 sp.c1 = 0; % baseline slope
 % ----
 
@@ -141,17 +265,18 @@ yfit = co2GasLineFitFunction(x,sp.center,sp.wg,sp.wl,sp.a1,sp.a2,sp.a3,sp.c0,sp.
 res = ydata-yfit;
 sse = sum(res.^2);
 
-figure(1);clf
+figure(182);clf
 plot(x,ydata,'o',x,yfit,x,res-0.1,'r-o')
 %% Do the FTIR peak fit
 T = tic; %time the fitting for later display
-f = gasLineFit(f,sp.center,sp.wg,sp.wl,sp.a1,sp.a2,sp.a3,sp.c0,sp.c1);
+f = gasLineFit(f,sp.center,sp.wg,sp.wl,sp.a1,sp.a2,sp.a3,sp.c0,sp.c1,...
+    "TolFun",1e-8,"TolX",1e-8,"MaxFunEvals",5000);
 stop = toc(T);
 
 %selecte 4 evenly placed fits to plot
 n_spectra = size(f.data,2);
 iis = ceil([1 n_spectra/4 n_spectra*3/4 n_spectra]);
-figure(2);clf
+figure(209);clf
 for ii = iis
     plot(f.fittedSpectra(ii).x,f.fittedSpectra(ii).ydata,'o',...
         f.fittedSpectra(ii).x,f.fittedSpectra(ii).yfit,...
@@ -174,20 +299,10 @@ if tl==0
 end
 review = [review;"Fitting took "+stop+" seconds."];
 review
- %% Plotting the uptake curve for viewing
-figure(3);clf
+%% Plotting the uptake curve for viewing
+figure(319);clf
 
-% number of spectra to show
-n = size(f.data,2);
-
-%find the indicies for the amount of spectra desired
-spectraIndicies = zeros(1,n);
-interval = ceil(size(f.data,2)/n);
-for ii = 1:n
-    spectraIndicies(ii) = (ii*interval);
-end
-
-for ii = spectraIndicies
+for ii = use_spectra
     temp = f.fittedSpectra(ii).fobj;
     pf = co2GasLineFitFunction(f.fittedSpectra(ii).x,temp.center,temp.w_g,temp.w_l,...
         temp.a1,temp.a2,0,0,0);
@@ -201,7 +316,9 @@ box off
 set(gca,'TickDir','out')
 hold off
 
-plot(subplot(2,1,2),f.timePts,concOverTime(f),'o-','color','blue');
+time_axis = f.timePts;
+concovertime = f.concOverTime;
+plot(subplot(2,1,2),time_axis(use_spectra),concovertime(use_spectra),'o-','color','blue');
 hold on
 title('Concentration Over Time')
 xlabel('Time (s)')
@@ -213,6 +330,88 @@ hold off
 set(gcf,'Units','normalized')
 set(gcf,'Color','w')
 set(gcf,'Position',[0.5 0 0.35 1])
+
+%% Water content analysis
+
+% wavenumber range of the water peaks
+% -------
+region_of_interest = [3150 3900];
+% -------
+
+% integration range
+% -------
+integration_range = [3300 3650];
+% -------
+
+% frequency point to track
+% -------
+freqpt = 3513;
+% -------
+
+% Plot of water over time
+
+y_max = zeros(1,numel(use_spectra));
+y_int = y_max;
+t = f.timePts/3600; % convert to hours
+
+figure(4745);clf
+clear sub_freq sub_data
+subplot(2,1,2)
+hold on
+
+for ii = 1:numel(t)
+    
+    [sub_data(:,ii),sub_freq] = getDataSubset(f.freqAxis,f.data(:,ii),region_of_interest);
+    
+    sub_data(:,ii) = baselineCorrect(sub_freq,sub_data(:,ii),"value",3200);
+    
+    curve_color = [ii/numel(t) 0 (numel(t)-ii)/numel(t)];
+    
+    if any(use_spectra == ii)
+        plot(sub_freq,sub_data(:,ii),'Color',curve_color)
+    end
+    
+    y_max(ii) = getDataSubset(sub_freq,sub_data(:,ii),[freqpt freqpt]);
+    
+    y_int(ii) = trapz(getDataSubset(sub_freq,sub_data(:,ii),integration_range));
+    
+end
+freqline = xline(freqpt,'g--','LineWidth',2);
+int_range = plot([integration_range(1) integration_range(2)],[max(sub_data(:,end)) max(sub_data(:,end))],'go--','LineWidth',2);
+xlim(region_of_interest)
+xlabel('Frequency (cm^{-1})')
+ylabel('Absorbance')
+legend([freqline, int_range],{'Frequency point to track','Integration range'})
+box off
+hold off
+
+subplot(2,1,1)
+yyaxis left
+plot(t(use_spectra),y_max(use_spectra),'bo-','MarkerFaceColor','blue','MarkerEdgeColor','blue')
+ylabel('Max Absorbance (O.D.)')
+yyaxis right
+plot(t(use_spectra),y_int(use_spectra),'ro-','MarkerFaceColor','red','MarkerEdgeColor','red')
+ylabel('Integrated Intensity (A.U.)')
+xlabel('Time (hr)')
+legend('Absorbance at frequency point','Integrated intensity','Location','northwest')
+box off
+
+set(gcf,'Position',[946     1   648   946])
+set(gcf,'Color','white')
+
+%% Show second derivative
+figure(7331);clf
+hold on
+plot(f.timePts,gradient(gradient(f.concOverTime)),'b-')
+plot(f.timePts,movmean(gradient(gradient(f.concOverTime)),10),'ro-')
+plot([0 max(f.timePts)],[0 0],'r--')
+legend('d^2c/dt^2','10-pt moving avg.','Location','northeast')
+title('Second derivative of conc over time plot')
+xlabel('Time (s)')
+ylabel('d^2 Concentration / dt^2')
+box off
+set(gca,'TickDir','out')
+hold off
 %% Save the data
 FTIR_peak_fitting_params.sp = sp;
 FTIR_peak_fitting_params.trial_spectrum = trial_spectrum;
@@ -227,9 +426,9 @@ save(date_of_experiment + "_FTIR_peak_fitting.mat",'FTIR_peak_fitting_params')
 
 %% Guesses for uptake curve fitting, by eye
 t = f.timePts;
-% t = t(1:80);
+t = t(use_spectra);
 y = f.concOverTime;
-% y = y(1:80);
+y = y(use_spectra);
 A = f.radius;
 nmax = 150;
 rres = 50;
@@ -238,17 +437,17 @@ sigma = 704;
 dy = 0;
 
 % ---- User input starting values
-dx = displacement_mm*1000;  % from the image analysis. can be overridden
-%     D    C   
-sp = [160  0.244]; % put guess here
-ub = [1e5 1e3];
+dx = f.displacement;  % from the image analysis. can be overridden
+%     D      C
+sp = [5      0.17]; % put guess here
+ub = [1e5 10];
 lb = [0 0];
 % ----
 
 figure(728);clf
 plot(t,y)
 hold on
-ymodel = diffusion_moving_beam(t,sp(1),A,sp(2),nmax,sigma,dx,dy,"rlim",rlim,'dx definition','from center');
+ymodel = diffusion_moving_beam(t,sp(1),A,sp(2),nmax,sigma,dx,dy,"rlim",rlim,'dx definition',dx_def);
 plot(t,ymodel)
 res = y(:) - ymodel(:);
 plot(t,res-0.025,'ro')
@@ -265,7 +464,7 @@ opts = fitoptions('Method','NonlinearLeastSquares',...
     'TolFun',1e-16,...
     'TolX',1e-16);
 
-ft = fittype(@(D,C,t) diffusion_moving_beam(t,D,A,C,nmax,sigma,dx,dy,"rlim",rlim,'dx definition','from center'),...
+ft = fittype(@(D,C,t) diffusion_moving_beam(t,D,A,C,nmax,sigma,dx,dy,"rlim",rlim,'dx definition',dx_def),...
     'independent',{'t'},...
     'dependent','absorbance',...
     'coefficients',{'D','C'},...
@@ -321,6 +520,7 @@ others = ["95% Confidence Interval is "+ci(1)+" to "+ci(2)+".";...
     "R^2 = "+string(f.diffusionFitResult.G.rsquare)]
 
 f.diffusionFitResult.fobj
+
 %% Save the data
 
 single_diffusion_fitting_params.sp = sp;
@@ -342,20 +542,59 @@ save(f.dateString + "_single_diffusion_fitting","f")
 % ---- PUT IN THE CORRECT NOTEBOOK PAGE TITLE ---
 notebook = 'Matt Lab Notebook';
 folder = 'Experiments';
-page_title = '2025-05-12 Diffusion of CO2 in 75% EMIM NTF2 in PEGDA';
+page_title = '2025-08-27 Diffusion of CO2 in PMIM NTF2';
 % ----
 
 obj = labarchivesCallObj('notebook',notebook,...
     'folder',folder,...
     'page',page_title);
-% microscope photo
-figure(6)
-obj = obj.updateFigureAttachment('caption','Kiralux camera photo of the sample annotated with calculated values');
+
+% parameters text entry
+obj.addEntry('plain text entry',...
+    sprintf(['Data post-processing parameters for easy access:\n\n'...
+            '* Radius used: %.3f μm\n\n'...
+            '* Displacement used: %.3f μm\n\n'...
+            '* Displacement defined: %s\n\n'...
+            '* Measured temperature: %.2f ± %.2f ºC'],...
+            f.radius, f.displacement, image_processing.pre.dx_definition,...
+            f.temperature, f.temperature_std));
+
+% pre photo
+% ----------
+figure(1)
+% ----------
+caption = "Kiralux camera photo of the sample before the diffusion annotated with calculated values: ";
+caption = caption + "radius = " + pre_radius + "mm, " + "dx = " + pre_displacement + "mm.";
+obj = obj.updateFigureAttachment('caption',caption);
+
+if post_image_complete
+caption = "Kiralux camera photo of the sample before the diffusion annotated with calculated values: ";
+caption = caption + "radius = " + post_radius + "mm, " + "dx = " + post_displacement + "mm.";
+
+% post photo
+% ----------
+figure(2)
+% ----------
+obj = obj.updateFigureAttachment('caption',caption);
+
+end
+
+% comparison photo
+% ----------
+figure(5015)
+% ----------
+obj = obj.updateFigureAttachment('caption',"Comparison photo between the pre- and post-diffusion image. Differences are highlighted in green and pink. Images were translated and rotated to find best match using imregconfig.");
+
 % uptake curve
-figure(3)
+% ----------
+figure(319)
+% ----------
 obj = obj.updateFigureAttachment;
+
 % single diffusion fitting result
+% ----------
 figure(144)
+% ----------
 caption = "Single diffusion coefficient fitting: ";
 coeffs = coeffnames(f.diffusionFitResult.fobj);
 units = ["um^2/s" "M"];
@@ -363,11 +602,23 @@ if numel(units) ~= numel(coeffs)
     error("Cannot match all fitting parameters with a unit.")
 end
 for ii = 1:numel(coeffs)
-   std_devs{ii} = (ci(2,ii) - ci(1,ii))/4;
-   caption = caption + coeffs{ii} + " = " + f.diffusionFitResult.fobj.(coeffs{ii})...
-       + " ± " + std_devs{ii} + " " + units(ii) + ", ";
+    std_devs{ii} = (ci(2,ii) - ci(1,ii))/4;
+    if isnan(std_devs{ii})
+        caption = caption + coeffs{ii} + " = " + f.diffusionFitResult.fobj.(coeffs{ii})...
+            + " " + units(ii) + ", ";
+    else
+        caption = caption + coeffs{ii} + " = " + f.diffusionFitResult.fobj.(coeffs{ii})...
+            + " ± " + std_devs{ii} + " " + units(ii) + ", ";
+    end
 end
 obj = obj.updateFigureAttachment('caption',caption);
+
+% water content
+% ----------
+figure(4745)
+% ----------
+obj = obj.updateFigureAttachment('caption',"Water content throughout the experiment.");
+
 %% ---- END OF STEP 3 ----
 
 %% Step 4: Fit for double diffusion coefficient

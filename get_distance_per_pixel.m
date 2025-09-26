@@ -47,7 +47,6 @@ end
 
 length_pixels = sqrt(sum((reference_location(:,1) - reference_location(:,2)).^2));
 
-reference_fig = figure();
 imshow(I)
 set(gcf,'Position',[1   490   681   457])
 hold on

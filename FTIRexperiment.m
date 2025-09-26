@@ -15,6 +15,10 @@ classdef FTIRexperiment
         fittedSpectra struct = []
         fitMethod
         diffusionFitResult struct
+        displacement double = NaN
+        temperature_setpoint double = NaN
+        temperature double = NaN
+        temperature_std double = NaN
     end
     methods
         % CONSTRUCTOR METHOD !!!
@@ -67,6 +71,8 @@ classdef FTIRexperiment
             if mod(numel(varargin),2) ~= 0
                 error("Watch for unpaired name/value pairs!")
             end
+            epsilon = 1050;
+            hot_band = false;
             while numel(varargin) >= 2
                 var = varargin{1};
                 val = varargin{2};
@@ -79,12 +85,6 @@ classdef FTIRexperiment
                         error("Invalid name/value pair")
                 end
                 varargin = varargin(3:end);
-            end
-            if ~exist('epsilon','var')
-                epsilon = 1050;
-            end
-            if ~exist('hot_band','var')
-                hot_band = false;
             end
             if isempty(obj.fittedSpectra)
                 error('You do not have any fitted spectra. Fit the gas lines out first.')
@@ -131,7 +131,26 @@ classdef FTIRexperiment
                 obj.finalConc = temp(end);
             end
         end
-        function obj = gasLineFit(obj,center,wg,wl,a1,a2,a3,c0,c1)
+        function obj = gasLineFit(obj,center,wg,wl,a1,a2,a3,c0,c1,varargin)
+            
+            tolfun = 1e-6;
+            tolx = 1e-6;
+            maxfunevals = 600;
+            while numel(varargin) >= 2
+                var = varargin{1};
+                val = varargin{2};
+                switch var
+                    case "TolFun"
+                        tolfun = val;
+                    case "TolX"
+                        tolx = val;
+                    case "MaxFunEvals"
+                        maxfunevals = val;
+                    otherwise
+                        error("Invalid name/value pair")
+                end
+                varargin = varargin(3:end);
+            end
             
             n_spectra = size(obj.data,2); % number of columns
             
@@ -143,7 +162,7 @@ classdef FTIRexperiment
             
             opts = fitoptions('Method','NonlinearLeastSquares',...
                 'Lower',lb,'Upper',ub,'StartPoint',sp,...
-                'Display','Iter');
+                'Display','Iter','TolFun',tolfun,'TolX',tolx,'MaxFunEvals',maxfunevals);
             ft = fittype(@(center,w_g,w_l,a1,a2,a3,c0,c1,w) co2GasLineFitFunction(w,center,w_g,w_l,a1,a2,a3,c0,c1),...
                 'independent',{'w'},'dependent','absorbance',...
                 'coefficients',{'center','w_g','w_l','a1','a2','a3','c0','c1'},...

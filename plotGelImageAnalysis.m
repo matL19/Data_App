@@ -1,6 +1,41 @@
-function plotGelImageAnalysis(I,r,dx,other_data,units)
+function plotGelImageAnalysis(I,r,dx,other_data,units,varargin)
 
-% must give r and dx in the same units that are indicated in the struct
+% Regenerates the annotated plot of the gel image using the outputs from
+% radius_from_image.m
+% 
+%     I - the image
+% 
+%     r - the radius
+% 
+%     dx - the displacement
+% 
+%     other_data - the other_data struct output from radius_from_image.m
+% 
+%     units - the units of r and dx. only accepting mm and um
+% 
+%     varargin - accepted name/value pairs:
+%         
+%         "AnnotationPosition" - location of the r = and dx = textbox,
+%         normalized to the axes, given as [x y]
+% 
+%         "FontSize" - font size of the text annotation
+%
+
+annotation_position = [0 1];
+font_size = 16;
+while numel(varargin) >= 2
+    var = varargin{1};
+    val = varargin{2};
+    switch var
+        case "AnnotationPosition"
+            annotation_position = val;
+        case "FontSize"
+            font_size = val;
+        otherwise
+            error("Invalid name/value pair.")
+    end
+    varargin = varargin(3:end);
+end
 
 % unpack the data
 radius_pixels = r / other_data.length_per_pixel;
@@ -35,18 +70,14 @@ scatter(other_data.pinhole_center(1),other_data.pinhole_center(2),'filled','red'
 scatter(other_data.pinhole_edge(:,1),other_data.pinhole_edge(:,2),'filled','cyan')
 
 % annotate measured radius on plot
-a = annotation('textbox',[0.1 0.8 0.1 0.1],'String',"r = " + radius_pixels + " pixels");
-a.FontSize = 16;
-a.Color = 'green';
-a.EdgeColor = 'white';
+a = text(annotation_position(1),annotation_position(2),...
+    "r = " + radius_pixels + " pixels",'Units','normalized',...
+    'FontSize',font_size,'Color','green','EdgeColor','white',...
+    'BackgroundColor','white');
 
 % annotate measured displacement on plot
 if other_data.dx_definition == "from center"
     plot([other_data.gel_center(1) other_data.pinhole_center(1)],[other_data.gel_center(2) other_data.pinhole_center(2)],'LineWidth',2','Color','cyan')
-    b = annotation('textbox',[0.1 0.75 0.1 0.1],'String',"dx = " + displacement_pixels + " pixels");
-    b.FontSize = 16;
-    b.Color = 'cyan';
-    b.EdgeColor = 'white';
 elseif other_data.dx_definition == "from edge"
     
     % find the minimum value of the parabola
@@ -62,11 +93,10 @@ elseif other_data.dx_definition == "from edge"
     figure(gel_fig.Number);
     hold on
     plot([closest_point(1) other_data.pinhole_center(1)],[closest_point(2) other_data.pinhole_center(2)],'LineWidth',2','Color','cyan')
-    b = annotation('textbox',[0.1 0.75 0.1 0.1],'String',"dx = " + displacement_pixels + " pixels");
-    b.FontSize = 16;
-    b.Color = 'cyan';
-    b.EdgeColor = 'white';
 end
+b = text(annotation_position(1),annotation_position(2)*0.9,"dx = " + displacement_pixels + " pixels",'Units','normalized',...
+    'FontSize',font_size,'Color','cyan','EdgeColor','white',...
+    'BackgroundColor','white');
 
 % annotate the plot with lengths
 a.String = a.String + " " + r + " " + units;

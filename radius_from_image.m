@@ -1,17 +1,22 @@
 function [r,dx,other_data] = radius_from_image(filepath,path_to_ref,ref_filename,varargin)
+
+
+% [r,dx,other_data_struct] = radius_from_image(path,ref_path,ref_file,varargin)
+% 
 % determines the radius and pinhole displacement from an image
 % name-value pairs include:
-%
+% 
 %   "image scale" - any integer or float > 0
-%
+% 
 %   "dx definition" - "from center" (default) or "from edge"
-%
+% 
 %   "radius definition" - "centroid" (default) or "radius of curvature" or
 %   "circle fit"
-%
+% 
 %   "units" - "mm" or "um"
-%
+% 
 %   "flag_plot" - true or false
+
 
 
 % set default values

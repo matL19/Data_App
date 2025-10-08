@@ -3,14 +3,14 @@
 % input data at the start
 % -------------------------------
 isilon_path = "/Volumes/CHEM-SGR/"; % path to CHEM-SGR on YOUR computer
-experiment_metadata.date_of_experiment = "2025-10-07";
+experiment_metadata.date_of_experiment = "2025-10-08";
 experiment_metadata.run_number = 1; % in case of multiple runs in a day
-experiment_metadata.spectra_range = 1:344;
-experiment_metadata.file_prefix = "PEGDA_20251007_rt_";
-experiment_metadata.temperature_log_filename = "TemperatureLog[8_24_23_AM][10_7_2025].log";
-experiment_metadata.path_length = 10.2680; % μm
+experiment_metadata.spectra_range = 1:25;
+experiment_metadata.file_prefix = "10EMIMNTF2PEGDA_20251008_rt_";
+experiment_metadata.temperature_log_filename = "TemperatureLog[1_09_00_PM][10_8_2025].log";
+experiment_metadata.path_length = 12; % μm
 experiment_metadata.time_delay = 30; % seconds
-experiment_metadata.sample_name = "PEGDA";
+experiment_metadata.sample_name = "10 pct EMIM NTF2 in PEGDA";
 experiment_metadata.your_name = "Matt";
 experiment_metadata.temperature_setpoint = NaN;
 % -------------------------------

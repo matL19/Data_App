@@ -10,7 +10,7 @@
 % previous analysis.
 
 % ----
-date_of_experiment = "2025-08-27";
+date_of_experiment = "2025-10-03";
 % ----
 
 year_of_experiment = year(datetime(date_of_experiment));
@@ -36,11 +36,11 @@ end
 %% Load the image from Isilon
 
 % ---- path to the image within CHEM-SGR (end with a slash) ----
-pre_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-08-27/";
+pre_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-10-03/";
 % ----
 
 % ---- name of the pre-diffusion image file (use the .tif one) ----
-pre_image_filename = "PMIM NTF2 2D windows 20250827 rt pre-diffusion.tif";
+pre_image_filename = "PMETMA NTF2 2D windows 20251003 80 C pre-diffusion.tif";
 % ----
 
 %% Process the image
@@ -94,11 +94,11 @@ post_image_complete = true;
 if post_image_complete
     
     % ---- path to the image within CHEM-SGR (end with a slash) ----
-    post_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-10-02/";
+    post_image_path = "sgr-kiralux-camera.chem.pitt.edu/2025-10-06/";
     % ----
     
     % ---- name of the pre-diffusion image file (use the .tif one) ----
-    post_image_filename = "PMIM NTF2 2D windows 20251001 80 C post-diffusion.tif";
+    post_image_filename = "PMETMA NTF2 2D windows 20251003 80 C post-diffusion.tif";
     % ----
     
     path_to_ref = isilon_path + "sgr-kiralux-camera.chem.pitt.edu/2025-05-09/";
@@ -108,7 +108,7 @@ if post_image_complete
     % ------------
     [post_radius,post_displacement,post_other] = radius_from_image(isilon_path+post_image_path+post_image_filename,...
         path_to_ref,ref_filename,...
-        "image scale",40,"dx definition",image_processing.pre.dx_definition,...
+        "image scale",80,"dx definition",image_processing.pre.dx_definition,...
         "radius definition",image_processing.pre.radius_definition,...
         "units",image_processing.pre.other_data.units,"flag_plot",false);
     % ------------
@@ -171,22 +171,22 @@ end
 %% Load in the spectra
 cd ~
 % --- the indicies of the spectra you wish to use ----
-spectra_range = [1:483];
+spectra_range = [1:468];
 % ----
 
 % --- the spectra file prefix ---
-file_prefix = 'PMIMNTF2_2D_20251001_80C_';
+file_prefix = 'PMETMANTF2_2D_20251003_80C_';
 % ----
 
 % --- the name of the temperature file
-temperature_log_filename = "TemperatureLog[3_13_50_PM][10_1_2025].log";
+temperature_log_filename = "TemperatureLog[11_33_31_AM][10_3_2025].log";
 % ---
 
 % --- experimental parameters ---
 volume = NaN;  % in microliters
-path_length = 10.7889;  % in microns
+path_length = 7.3008;  % in microns
 time_delay = 120;  % between spectra, in seconds
-sample_name = "PMIM NTF2";
+sample_name = "PMETMA NTF2";
 your_name = "Matt";
 temperature_setpoint = 80;
 % ---
@@ -255,7 +255,7 @@ fprintf("Successfully imported %i spectra.\n",size(f.data,2))
 
 %% Guesses for FTIR peak fitting, by eye
 % ---- Which spectrum will you match to? Usually the last one is good.
-trial_spectrum = 483;
+trial_spectrum = 468;
 % ----
 
 % set the fit range. Usually doesn't need to be changed
@@ -266,7 +266,7 @@ clear sp
 sp.center = 2342.25;
 sp.wg = 1.7;
 sp.wl = 1.7;
-sp.a1 = 0.6;  % main peak height
+sp.a1 = 0.4;  % main peak height
 sp.a2 = 0.07; % expected Boltzmann factor for bend
 sp.a3 = 0.01; % gas lines
 sp.c0 = 0.008;
@@ -479,7 +479,7 @@ end
 % ---- User input starting values
 dx = f.displacement;
 %     D      C
-sp = [65  0.073]; % put guess here
+sp = [45     0.09]; % put guess here
 ub = [1e5 10];
 lb = [0 0];
 use_spectra = [1:size(f.data,2)];
@@ -610,7 +610,7 @@ fprintf("\n============\nResults\n============\n\tD = %.4f ± %.4f μm^2/s\n\tC
 % --------------------
 notebook = 'Matt Lab Notebook';
 folder = 'Experiments';
-page_title = '2025-10-01 Diffusion of CO2 in PMIM NTF2 at 80 C';
+page_title = '2025-10-03 Diffusion of CO2 in PMETMA NTF2 at 80 C';
 pre_image_fig_num = 1;
 post_image_fig_num = 2;
 comparison_image_fig_num = 5015;

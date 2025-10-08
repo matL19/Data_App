@@ -35,7 +35,7 @@ end
 
 cd(image_filepath);
 I = imread(image_filename);
-if numel(size(image)) ~= 2
+if numel(size(I)) ~= 2
     I = I(:,:,1:3);
     I = rgb2gray(I);
 end
@@ -47,9 +47,11 @@ end
 
 length_pixels = sqrt(sum((reference_location(:,1) - reference_location(:,2)).^2));
 
-imshow(I)
-set(gcf,'Position',[1   490   681   457])
-hold on
-plot(reference_location(1,:),reference_location(2,:),'ro-')
+% imshow(I)
+% set(gcf,'Position',[1   490   681   457])
+% hold on
+% plot(reference_location(1,:),reference_location(2,:),'ro-')
+
 length_per_pixel = reference_length/length_pixels;
+
 end

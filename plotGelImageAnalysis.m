@@ -20,9 +20,15 @@ function plotGelImageAnalysis(I,r,dx,other_data,units,varargin)
 % 
 %         "FontSize" - font size of the text annotation
 %
+%         "figure" - figure object
+%
+%         "axes" - axes object
+%
 
 annotation_position = [0 1];
 font_size = 16;
+gel_fig = figure();
+gel_ax = axes(gel_fig);
 while numel(varargin) >= 2
     var = varargin{1};
     val = varargin{2};
@@ -31,6 +37,11 @@ while numel(varargin) >= 2
             annotation_position = val;
         case "FontSize"
             font_size = val;
+        case "figure"
+            close(gel_fig)
+            gel_fig = val;
+        case "axes"
+            gel_ax = val;
         otherwise
             error("Invalid name/value pair.")
     end
@@ -47,27 +58,26 @@ end
 
 % display the image
 imshow(I)
-gel_fig = gcf;
-set(gcf,'Position',[813   332   868   615])
+set(gel_fig,'Position',[813   332   868   615])
 hold on
 
 % gel center
-scatter(other_data.gel_center(1),other_data.gel_center(2),'filled','red')
+scatter(gel_ax,other_data.gel_center(1),other_data.gel_center(2),'filled','red')
 
 % gel edge
-scatter(other_data.gel_edge(:,1),other_data.gel_edge(:,2),'filled','green')
+scatter(gel_ax,other_data.gel_edge(:,1),other_data.gel_edge(:,2),'filled','green')
 
 % radius line
-plot([other_data.gel_center(1)-radius_pixels other_data.gel_center(1)],[other_data.gel_center(2) other_data.gel_center(2)],'green','LineWidth',2)
+plot(gel_ax,[other_data.gel_center(1)-radius_pixels other_data.gel_center(1)],[other_data.gel_center(2) other_data.gel_center(2)],'green','LineWidth',2)
 
 % resulting circle
-plot(radius_pixels*cos(0:0.01:2*pi)+other_data.gel_center(1),radius_pixels*sin(0:0.01:2*pi)+other_data.gel_center(2),'Color','red')
+plot(gel_ax,radius_pixels*cos(0:0.01:2*pi)+other_data.gel_center(1),radius_pixels*sin(0:0.01:2*pi)+other_data.gel_center(2),'Color','red')
 
 % pinhole center
-scatter(other_data.pinhole_center(1),other_data.pinhole_center(2),'filled','red')
+scatter(gel_ax,other_data.pinhole_center(1),other_data.pinhole_center(2),'filled','red')
 
 % pinhole edge
-scatter(other_data.pinhole_edge(:,1),other_data.pinhole_edge(:,2),'filled','cyan')
+scatter(gel_ax,other_data.pinhole_edge(:,1),other_data.pinhole_edge(:,2),'filled','cyan')
 
 % annotate measured radius on plot
 a = text(annotation_position(1),annotation_position(2),...
@@ -77,7 +87,7 @@ a = text(annotation_position(1),annotation_position(2),...
 
 % annotate measured displacement on plot
 if other_data.dx_definition == "from center"
-    plot([other_data.gel_center(1) other_data.pinhole_center(1)],[other_data.gel_center(2) other_data.pinhole_center(2)],'LineWidth',2','Color','cyan')
+    plot(gel_ax,[other_data.gel_center(1) other_data.pinhole_center(1)],[other_data.gel_center(2) other_data.pinhole_center(2)],'LineWidth',2','Color','cyan')
 elseif other_data.dx_definition == "from edge"
     
     % find the minimum value of the parabola
@@ -90,9 +100,7 @@ elseif other_data.dx_definition == "from edge"
     closest_point = other_data.gel_center + unitV * radius_pixels;
     
     % annotate the plot
-    figure(gel_fig.Number);
-    hold on
-    plot([closest_point(1) other_data.pinhole_center(1)],[closest_point(2) other_data.pinhole_center(2)],'LineWidth',2','Color','cyan')
+    plot(gel_ax,[closest_point(1) other_data.pinhole_center(1)],[closest_point(2) other_data.pinhole_center(2)],'LineWidth',2','Color','cyan')
 end
 b = text(annotation_position(1),annotation_position(2)*0.9,"dx = " + displacement_pixels + " pixels",'Units','normalized',...
     'FontSize',font_size,'Color','cyan','EdgeColor','white',...

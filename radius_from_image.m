@@ -70,16 +70,16 @@ cd(image_path);
 I = imread(image_filename + ext);
 
 % greyscale the image if in color
-if numel(size(image)) ~= 2
+if numel(size(I)) ~= 2
     I = I(:,:,1:3);
     I = rgb2gray(I);
 end
 
 % display the image for user input
 I = I*scale_factor;
+gel_fig = figure();
 imshow(I)
-gel_fig = gcf;
-set(gcf,'Position',[813   332   868   615])
+set(gel_fig,'Position',[813   332   868   615])
 hold on
 
 % ---- When selecting edges, the points you select must be fairly evenly
@@ -103,7 +103,7 @@ guide = annotation('textbox',[0.2 0 0.1 0.1],'String',...
 pinhole_edge = ginput;
 % delete(findall(gcf,'type','annotation'))
 
-close gcf
+close(gel_fig.Number)
 
 % Calculate sample radius
 [radius_pixels, gel_center] = calculateRadius(gel_edge, rad_def);
@@ -120,6 +120,9 @@ r_um = radius_pixels * microns_per_pixel;
 if units == "mm"
     dx = dx_um / 1000;
     r = r_um / 1000;
+else
+    dx = dx_um;
+    r = r_um;
 end
 
 % ALL other parameters output

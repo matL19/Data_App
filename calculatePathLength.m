@@ -4,7 +4,7 @@
 
 % etaloning spectrum filepath
 % -------
-filepath = "/Volumes/CHEM-SGR/sgr-ftir.chem.pitt.edu/2025/2025-09-18/PMNTF2 EMIM FTIR windows etaloning.SPA";
+filepath = "/Volumes/CHEM-SGR/sgr-ftir.chem.pitt.edu/2025/2025-10-07/pegda_sample_20251007_etaloning.SPA";
 % -------
 
 [path, name, ext] = fileparts(filepath);
@@ -15,8 +15,8 @@ plot(freq,data)
 
 %% Select frequency points to use
 
-freqpts = [1970.32 2118.45];
-num_fringes = 2;
+freqpts = [2764.62 3251.57];
+num_fringes = 1;
 
 path_length_mm = 10 * num_fringes / (2*abs(freqpts(2) - freqpts(1)));
 

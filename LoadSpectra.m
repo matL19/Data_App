@@ -8,10 +8,31 @@ function [Spectra, Wavenumbers, SpectraTitles, Filenames, ...
 % with data from the selected files stored in columns.
 %
 % Kurt Oldenburg - 06/28/16
+%
+% Modified: 
+%
+% LoadSpectra() - calls UI to manually select file from directory
+%
+% LoadSpectra(filename) - loads filename from the cwd
+%
+% LoadSpectra(filepath,filename) - will cd to filepath and loadfilename
+%
+% LoadSpectra(filepath,fileroot,nums) - will cd to filepath and load
+% numbered spectra filenames in nums prefixed with fileroot
+%
+%
+%
+%
+%
+%
 % 
+
+
 if nargin == 0
 [Filenames,pathname]=uigetfile({'*.spa','Thermo Spectrum (*.spa)'}, ...
        'MultiSelect','on','Select Spectra Files...');
+elseif nargin == 1
+    Filenames = varargin{1};
 elseif nargin == 2
     pathname = varargin{1};
     Filenames = varargin{2};
@@ -36,7 +57,9 @@ else
     error("Error: Invalid set of arguments. ...If using arguments, enter (filepath,fileroot,nums)")
 end
 
-cd (pathname);  % Change to directory where the spectrum files are.
+if exist('pathname','var')
+    cd (pathname);  % Change to directory where the spectrum files are.
+end
 
 if ischar(Filenames)== 1           % If only 1 file is selected, Filenames
     NumSpectra = 1;                % is a char instead of a cell of chars,

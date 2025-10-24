@@ -1,3 +1,8 @@
+%{
+      THIS IS AN OUTDATED SCRIPT - retired in Oct. 2025. Replaced with
+      diffusion_main.m
+%}
+
 %% FULL DATA ANALYSIS of diffusion experiment - from start to finish -
 
 % ---- Variables that require user manual input will be surrounded ----

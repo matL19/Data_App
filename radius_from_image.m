@@ -103,7 +103,7 @@ guide = annotation('textbox',[0.2 0 0.1 0.1],'String',...
 pinhole_edge = ginput;
 % delete(findall(gcf,'type','annotation'))
 
-close(gel_fig.Number)
+close(gel_fig)
 
 % Calculate sample radius
 [radius_pixels, gel_center] = calculateRadius(gel_edge, rad_def);

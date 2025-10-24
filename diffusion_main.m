@@ -3,14 +3,14 @@
 % input data at the start
 % -------------------------------
 isilon_path = "/Volumes/CHEM-SGR/"; % path to CHEM-SGR on YOUR computer
-experiment_metadata.date_of_experiment = "2025-10-08";
+experiment_metadata.date_of_experiment = "2025-10-23";
 experiment_metadata.run_number = 1; % in case of multiple runs in a day
-experiment_metadata.spectra_range = 1:25;
-experiment_metadata.file_prefix = "10EMIMNTF2PEGDA_20251008_rt_";
-experiment_metadata.temperature_log_filename = "TemperatureLog[1_09_00_PM][10_8_2025].log";
+experiment_metadata.spectra_range = 1:10:600;
+experiment_metadata.file_prefix = "PEGDA_20251023_rt_";
+experiment_metadata.temperature_log_filename = "TemperatureLog[3_51_24_PM][10_23_2025].log";
 experiment_metadata.path_length = 12; % μm
 experiment_metadata.time_delay = 30; % seconds
-experiment_metadata.sample_name = "10 pct EMIM NTF2 in PEGDA";
+experiment_metadata.sample_name = "pure PEGDA";
 experiment_metadata.your_name = "Matt";
 experiment_metadata.temperature_setpoint = NaN;
 % -------------------------------
@@ -50,7 +50,7 @@ end
 % f.temperature_setpoint = temperature_setpoint;
 
 % read the temperature
- try
+try
     temp_log = readmatrix(experiment_metadata.temperature_log_filename);
 catch
     warning("No temperature log found. A temperature was not recorded.")
@@ -58,14 +58,16 @@ catch
     temperature_std = NaN;
     temp_log = [];
 end
-if ~isempty(temp_log)
+if isscalar(temp_log) && isnan(temp_log)
+    warning("Error reading the temperature log. No temperature recorded.")
+elseif ~isempty(temp_log)
     temp_log = temp_log(:,2);
     temp_log = temp_log(~isnan(temp_log));
     experiment_metadata.temperature = mean(temp_log);
     experiment_metadata.temperature_std = std(temp_log);
     fprintf("Temperature recorded: %.3f ± %.3f ºC\n",experiment_metadata.temperature,experiment_metadata.temperature_std)
 else
-    fprintf("Cannot read temperature log file until experiment is complete.\n")
+    warning("Cannot read temperature log file until experiment is complete.\n")
 end
 
 fprintf("Time to load %i spectra: %.3f mins\n",size(FTIR_data.spectra,2),T/60);
@@ -246,14 +248,20 @@ clearvars -except experiment_metadata FTIR_data time_axis conc_over_time isilon_
 
 clear image_processing
 % -------------------------
-pre_image_path = "/sgr-kiralux-camera.chem.pitt.edu/2025-10-07/";
-pre_image_filename = "pegda_20251007_rt_pre-diffusion.tif";
+pre_image_path = "/sgr-kiralux-camera.chem.pitt.edu/2025-10-23/";
+pre_image_filename = "PEGDA_20251023_rt_pre-diffusion.tif";
 post_image_path = "";
 post_image_filename = "";
-image_processing.pre.dx_definition = "from edge";
-image_processing.pre.radius_definition = "circle fit";
-image_processing.pre.units = "um";
+dx_definition = "from edge";
+radius_definition = "circle fit";
+units = "um";
 % -------------------------
+
+if pre_image_filename == ""
+    pre_image_complete = false;
+else
+    pre_image_complete = true;
+end
 
 if post_image_filename == ""
     post_image_complete = false;
@@ -265,18 +273,26 @@ path_to_ref = isilon_path + "sgr-kiralux-camera.chem.pitt.edu/2025-05-09/";
 ref_filename = "scaled_reticle01.tif";
 
 % analyze the pre image
+if pre_image_complete
+    
 [image_processing.pre.radius,...
     image_processing.pre.displacement,...
     image_processing.pre.other_data] = radius_from_image(isilon_path+pre_image_path+pre_image_filename,...
     path_to_ref,ref_filename,...
-    "image scale",80,"dx definition",image_processing.pre.dx_definition,...
-    "radius definition",image_processing.pre.radius_definition,...
-    "units",image_processing.pre.units,"flag_plot",true);
+    "image scale",80,"dx definition",dx_definition,...
+    "radius definition",radius_definition,...
+    "units",units,"flag_plot",true);
+
+image_processing.pre.dx_definition = dx_definition;
+image_processing.pre.raduis_definition = radius_definition;
+image_processing.pre.units = units;
 
 fprintf("Pre-image: r = %4f μm; dx = %4f μm\n",image_processing.pre.radius,image_processing.pre.displacement)
 
 % package up the pre-data
 image_processing.pre.path = pre_image_path + pre_image_filename;
+
+end
 
 if post_image_complete
     
@@ -285,17 +301,21 @@ if post_image_complete
         image_processing.post.displacement,...
         image_processing.post.other_data] = radius_from_image(isilon_path+post_image_path+post_image_filename,...
         path_to_ref,ref_filename,...
-        "image scale",40,"dx definition",image_processing.pre.dx_definition,...
-        "radius definition",image_processing.pre.radius_definition,...
-        "units",image_processing.pre.other_data.units,"flag_plot",true);
+        "image scale",40,"dx definition",dx_definition,...
+        "radius definition",radius_definition,...
+        "units",units,"flag_plot",true);
     
     fprintf("Post-image: r = %4f μm; dx = %4f μm\n",image_processing.post.radius,image_processing.post.displacement)
     
     % package up the post-data
     image_processing.post.path = post_image_path + post_image_filename;
-    image_processing.post.units = image_processing.pre.other_data.units;
-    image_processing.post.dx_definition = image_processing.pre.dx_definition;
-    image_processing.post.radius_definition = image_processing.pre.radius_definition;
+    image_processing.post.units = units;
+    image_processing.post.dx_definition = dx_definition;
+    image_processing.post.radius_definition = radius_definition;
+    
+end
+
+if pre_image_complete && post_image_complete
     
     % Show the image comparison
     pre_image = imread(isilon_path + image_processing.pre.path);
@@ -308,15 +328,21 @@ if post_image_complete
 end
 
 % set the displacement and radius
-if isfield('image_processing','post')
+if isfield(image_processing,'pre') && isfield(image_processing,'post')
     radius = mean([image_processing.pre.radius image_processing.post.radius]);
     displacement = mean([image_processing.pre.displacement image_processing.post.displacement]);
-else
+elseif isfield(image_processing,'pre') && ~isfield(image_processing,'post')
     radius = image_processing.pre.radius;
     displacement = image_processing.pre.displacement;
+elseif ~isfield(image_processing,'pre') && isfield(image_processing,'post')
+    radius = image_processing.post.radius;
+    displacement = image_processing.post.displacement;
+else
+    error("No image processing data.")
 end
 
 fprintf("Final values: r = %.5f μm, dx = %.5f\n",radius,displacement)
+
 
 % ===================================================
 %   Step 4 - Fit for diffusion coefficient
@@ -349,7 +375,7 @@ while diffusion_start_point
     rlim = 350;
     sigma = 704;
     dy = 0;
-    dx_def = image_processing.pre.dx_definition;
+    dx_def = dx_definition;
     
     % show the starting point plot
     figure(728);clf
@@ -402,7 +428,7 @@ C_std = (ci(2,2) - ci(1,2))/4;
 fprintf("\n============\nResults\n============\n\tD = %.4f ± %.4f μm^2/s\n\tC = %.4f ± %.4f M\n\n",diffusionFitResult.fobj.D,D_std,diffusionFitResult.fobj.C,C_std)
 
 % Clean up the workspace
-clearvars -except image_processing radius displacement time_axis conc_over_time FTIR_data experiment_metadata diffusionFitResult isilon_path data_path
+% clearvars -except image_processing radius displacement time_axis conc_over_time FTIR_data experiment_metadata diffusionFitResult isilon_path data_path
 
 %% Save everything - DO NOT RUN IF ALREADY DONE
 
@@ -414,9 +440,9 @@ clearvars -except image_processing radius displacement time_axis conc_over_time 
 % --------------------
 notebook = 'Matt Lab Notebook';
 folder = 'Experiments';
-page_title = '2025-10-06 Diffusion of CO2 in PEGDA';
+page_title = '2025-10-21 Diffusion of CO2 in PEGDA';
 pre_image_fig_num = 1;
-post_image_fig_num = 2;
+post_image_fig_num = 3;
 comparison_image_fig_num = 5015;
 uptake_curve_fig_num = 319;
 diffusion_fitting_result_fig_num = 144;
@@ -434,24 +460,28 @@ obj.addEntry('plain text entry',...
     '* Displacement used: %.3f μm\n\n'...
     '* Displacement defined: %s\n\n'...
     '* Measured temperature: %.2f ± %.2f ºC'],...
-    radius, displacement, image_processing.pre.dx_definition,...
+    radius, displacement, dx_definition,...
     experiment_metadata.temperature, experiment_metadata.temperature_std));
 
 % pre photo
 % ----------
 figure(pre_image_fig_num)
 % ----------
+if pre_image_complete
 caption = "Kiralux camera photo of the sample before the diffusion annotated with calculated values: ";
 caption = caption + "radius = " + image_processing.pre.radius + "μm, " + "dx = " + image_processing.pre.displacement + "μm.";
 obj = obj.updateFigureAttachment('caption',caption);
+end
 
 % post photo
 % ----------
 figure(post_image_fig_num)
 % ----------
+if pre_image_complete && post_image_complete
 caption = "Kiralux camera photo of the sample before the diffusion annotated with calculated values: ";
 caption = caption + "radius = " + image_processing.post.radius + "μm, " + "dx = " + image_processing.post.displacement + "μm.";
 obj = obj.updateFigureAttachment('caption',caption);
+end
 
 % comparison photo
 % ----------
